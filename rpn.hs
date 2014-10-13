@@ -46,9 +46,12 @@ process stacks ("+":xs) = processBinOp stacks (+) xs
 process stacks ("-":xs) = processBinOp stacks (-) xs
 process stacks ("*":xs) = processBinOp stacks (*) xs
 process (errs, s@(0:_)) ("/":xs) = process (errDiv : errs, s) xs
+process (errs, s@(0:_)) ("%":xs) = process (errDiv : errs, s) xs
 process stacks ("/":xs) = processBinOp stacks (/) xs
+process stacks ("%":xs) = processBinOp stacks (%) xs
 process stacks ("^":xs) = processBinOp stacks (**) xs
 process stacks ("!":xs) = processUnaOp stacks gamma xs
+process stacks ("sum":xs) = processArrOp stacks sum xs
 process (err, stack) (x:xs) = case parseNumber x of
                                 ([e], []) -> process (e : err, stack) xs
                                 ([], [n]) -> process (err, n : stack) xs
@@ -70,6 +73,16 @@ processUnaOp (errs, stack) op = let (newErr, newStack) = unaryMath stack op
                                 in process (newErr ++ errs, newStack)
   where unaryMath [] _ = ([errOp], [])
         unaryMath (x:xs) f = ([], f x : xs)
+
+processArrOp :: Result -> ArrOp -> [String] -> Result
+processArrOp (errs, stack) op = let (newErr, newStack) = arrayMath stack op
+                                in process (newErr ++ errs, newStack)
+  where arrayMath xs f = ([], [(f xs)])
+
+(%) :: Double -> Double -> Double
+(%) x y = fromIntegral ((toInt x) `mod` (toInt y))
+  where toInt :: Double -> Int
+        toInt z = round z
 
 gamma :: Double -> Double
 gamma x = fromIntegral (factorial (floor x))

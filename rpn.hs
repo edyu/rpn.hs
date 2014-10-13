@@ -8,6 +8,8 @@ errOp :: Error
 errOp = "not enough operands"
 errDiv :: Error
 errDiv = "division by zero"
+errNum :: Error
+errNum = "can't parse number"
 
 main :: IO ()
 main = do
@@ -46,7 +48,17 @@ process stacks ("+":xs) = doMath stacks add2 xs
 process stacks ("-":xs) = doMath stacks sub2 xs
 process stacks ("*":xs) = doMath stacks mul2 xs
 process stacks ("/":xs) = doMath stacks div2 xs
-process (err, stack) (x:xs) = process (err, (read x) : stack) xs
+process (err, stack) (x:xs) = case parseNumber x of
+                                ([e], []) -> process (e : err, stack) xs
+                                ([], [n]) -> process (err, n : stack) xs
+                                _ -> process (err, stack) xs
+
+parseNumber :: String -> Result
+parseNumber x = case res of
+                  [] -> ([errNum], [])
+                  [(n, _)] -> ([], [n])
+                  _ -> ([], [])
+  where res = reads x
 
 add2 :: [Double] -> Result
 add2 [] = ([errOp], [])

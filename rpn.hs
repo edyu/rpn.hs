@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
+
 type Stack = [Double]
 type Error = String
 type Result = ([Error], Stack)
@@ -7,6 +9,7 @@ errOp = "not enough operands"
 errDiv :: Error
 errDiv = "division by zero"
 
+main :: IO ()
 main = do
   processInput []
 
@@ -20,13 +23,20 @@ processInput stack = do
     else do
       let (err, result) = process ([], stack) $ tokenize line
       if null err
-        then print result
-        else print err
+        then print $ head result
+        else printErrors err
       processInput result
+
+printErrors :: [Error] -> IO ()
+printErrors [] = return ()
+printErrors (x:xs) = do
+                       putStrLn x
+                       printErrors xs
 
 tokenize :: String -> [String]
 tokenize = words
 
+doMath :: ([Error], t) -> (t -> ([Error], Stack)) -> [String] -> Result
 doMath (errs, stack) math = let res = math stack
                             in  process (fst res ++ errs, snd res)
 

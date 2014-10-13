@@ -82,10 +82,11 @@ processArrOp (errs, stack) op = let (newErr, newStack) = arrayMath stack op
 (%) :: Double -> Double -> Double
 (%) x y = fromIntegral ((toInt x) `mod` (toInt y))
   where toInt :: Double -> Int
-        toInt z = round z
+        toInt = round
 
 gamma :: Double -> Double
-gamma x = fromIntegral (factorial (floor x))
-  where factorial :: Int -> Int
-        factorial y | y <= 0 = 1
+gamma x = fromIntegral (factorial (toInt x))
+  where factorial y | y <= 0 = 1
                     | otherwise = y * factorial (y - 1)
+        toInt :: Double -> Int
+        toInt = floor

@@ -4,6 +4,8 @@ type Stack = [Double]
 type Error = String
 type Result = ([Error], Stack)
 type BinOp = (Double -> Double -> Double)
+type ArrOp = ([Double] -> Double)
+type UnaOp = (Double -> Double)
 
 errOp :: Error
 errOp = "not enough operands"
@@ -39,12 +41,14 @@ processInput stack = do
             tokenize = words
 
 process :: Result -> [String] -> Result
-process (errs, stack) [] = (errs, stack)
-process stacks ("+":xs) = doMath stacks (+) xs
-process stacks ("-":xs) = doMath stacks (-) xs
-process stacks ("*":xs) = doMath stacks (*) xs
+process stacks [] = stacks
+process stacks ("+":xs) = processBinOp stacks (+) xs
+process stacks ("-":xs) = processBinOp stacks (-) xs
+process stacks ("*":xs) = processBinOp stacks (*) xs
 process (errs, s@(0:_)) ("/":xs) = process (errDiv : errs, s) xs
-process stacks ("/":xs) = doMath stacks (/) xs
+process stacks ("/":xs) = processBinOp stacks (/) xs
+process stacks ("^":xs) = processBinOp stacks (**) xs
+process stacks ("!":xs) = processUnaOp stacks gamma xs
 process (err, stack) (x:xs) = case parseNumber x of
                                 ([e], []) -> process (e : err, stack) xs
                                 ([], [n]) -> process (err, n : stack) xs
@@ -54,11 +58,21 @@ process (err, stack) (x:xs) = case parseNumber x of
           [(n, _)] -> ([], [n])
           _ -> ([], [])
 
-doMath :: ([Error], Stack) -> BinOp -> [String] -> Result
-doMath (errs, stack) op = let (newErr, newStack) = binaryMath stack op
-                          in  process (newErr ++ errs, newStack)
+processBinOp :: Result -> BinOp -> [String] -> Result
+processBinOp (errs, stack) op = let (newErr, newStack) = binaryMath stack op
+                                in  process (newErr ++ errs, newStack)
+  where binaryMath [] _ = ([errOp], [])
+        binaryMath (x:y:xs) f = ([], (y `f` x) : xs)
+        binaryMath xs@(_:_) _ = ([errOp], xs)
 
-binaryMath :: Stack -> BinOp -> Result
-binaryMath [] _ = ([errOp], [])
-binaryMath (x:y:xs) op = ([], (y `op` x) : xs)
-binaryMath xs@(_:_) _ = ([errOp], xs)
+processUnaOp :: Result -> UnaOp -> [String] -> Result
+processUnaOp (errs, stack) op = let (newErr, newStack) = unaryMath stack op
+                                in process (newErr ++ errs, newStack)
+  where unaryMath [] _ = ([errOp], [])
+        unaryMath (x:xs) f = ([], f x : xs)
+
+gamma :: Double -> Double
+gamma x = fromIntegral (factorial (floor x))
+  where factorial :: Int -> Int
+        factorial y | y <= 0 = 1
+                    | otherwise = y * factorial (y - 1)

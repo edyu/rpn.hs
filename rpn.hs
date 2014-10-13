@@ -34,10 +34,7 @@ processInput stack = do
         then print $ head newStack
         else printErrors errors
       processInput newStack
-      where printErrors [] = return ()
-            printErrors (x:xs) = do
-              putStrLn x
-              printErrors xs
+      where printErrors = mapM_ putStrLn
             tokenize = words
 
 process :: Result -> [String] -> Result

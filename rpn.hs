@@ -23,20 +23,16 @@ processInput stack = do
       putStrLn "goodbye!"
       return ()
     else do
-      let (err, result) = process ([], stack) $ tokenize line
-      if null err
-        then print $ head result
-        else printErrors err
-      processInput result
-
-printErrors :: [Error] -> IO ()
-printErrors [] = return ()
-printErrors (x:xs) = do
-                       putStrLn x
-                       printErrors xs
-
-tokenize :: String -> [String]
-tokenize = words
+      let (errors, newStack) = process ([], stack) $ tokenize line
+      if null errors
+        then print $ head newStack
+        else printErrors errors
+      processInput newStack
+      where printErrors [] = return ()
+            printErrors (x:xs) = do
+              putStrLn x
+              printErrors xs
+            tokenize = words
 
 doMath :: ([Error], t) -> (t -> ([Error], Stack)) -> [String] -> Result
 doMath (errs, stack) math = let res = math stack
@@ -52,13 +48,10 @@ process (err, stack) (x:xs) = case parseNumber x of
                                 ([e], []) -> process (e : err, stack) xs
                                 ([], [n]) -> process (err, n : stack) xs
                                 _ -> process (err, stack) xs
-
-parseNumber :: String -> Result
-parseNumber x = case res of
-                  [] -> ([errNum], [])
-                  [(n, _)] -> ([], [n])
-                  _ -> ([], [])
-  where res = reads x
+  where parseNumber y = case reads y of
+          [] -> ([errNum], [])
+          [(n, _)] -> ([], [n])
+          _ -> ([], [])
 
 add2 :: [Double] -> Result
 add2 [] = ([errOp], [])

@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 
+import Control.Exception (catch)
+
 type Stack = [Double]
 type Error = String
 type Result = ([Error], Stack)
@@ -18,9 +20,12 @@ main :: IO ()
 main = do
   processInput []
 
+catchEOF :: IO a -> (IOError -> IO a) -> IO a
+catchEOF = Control.Exception.catch
+
 processInput :: Stack -> IO ()
 processInput stack = do
-  line <- getLine
+  line <- catchEOF getLine (\_ -> return "q")
   case line of
     "q" -> do
       putStrLn "goodbye!"

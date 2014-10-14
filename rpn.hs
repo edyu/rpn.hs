@@ -11,6 +11,21 @@ type UnaOp = (Double -> Double)
 type BinOp = (Double -> Double -> Double)
 type ArrOp = ([Double] -> Double)
 
+class Calculable a where
+    calculate :: Stack -> a -> Result
+
+instance Calculable UnaOp where
+    calculate [] _     = ([errOp], [])
+    calculate (x:xs) f = ([], f x : xs)
+
+instance Calculable BinOp where
+    calculate [] _       = ([errOp], [])
+    calculate (x:y:xs) f = ([], (y `f` x) : xs)
+    calculate xs@(_:_) _ = ([errOp], xs)
+
+instance Calculable ArrOp where
+    calculate xs f = ([], [(f xs)])
+
 errOp :: Error
 errOp = "not enough operands"
 errDiv :: Error
@@ -56,33 +71,18 @@ process stacks ("%":xs)           = calcStack stacks ((%) :: BinOp) xs
 process stacks ("^":xs)           = calcStack stacks ((**) :: BinOp) xs
 process stacks ("!":xs)           = calcStack stacks (gamma :: UnaOp) xs
 process stacks ("sum":xs)         = calcStack stacks (sum :: ArrOp) xs
-process (err, stack) (x:xs)       = case parseNumber x of
-                                    ([e], []) -> process (e : err, stack) xs
-                                    ([], [n]) -> process (err, n : stack) xs
-                                    _         -> process (err, stack) xs
+process (errs, stack) (x:xs)      = case parseNumber x of
+                                    ([e], []) -> process (e : errs, stack) xs
+                                    ([], [n]) -> process (errs, n : stack) xs
+                                    _         -> process (errs, stack) xs
     where parseNumber y = case reads y of
                           []        -> ([errNum], [])
                           [(n, _)]  -> ([], [n])
                           _         -> ([], [])
 
-class Calculable a where
-    calculate :: Stack -> a -> Result
-
-instance Calculable UnaOp where
-    calculate [] _     = ([errOp], [])
-    calculate (x:xs) f = ([], f x : xs)
-
-instance Calculable BinOp where
-    calculate [] _       = ([errOp], [])
-    calculate (x:y:xs) f = ([], (y `f` x) : xs)
-    calculate xs@(_:_) _ = ([errOp], xs)
-
-instance Calculable ArrOp where
-    calculate xs f = ([], [(f xs)])
-
 calcStack :: Calculable a => Result -> a -> [String] -> Result
-calcStack (errs, stack) op = let (newErr, newStack) = calculate stack op
-                             in  process (newErr ++ errs, newStack)
+calcStack (errs, stack) op = let (e, s) = calculate stack op
+                             in  process (e ++ errs, s)
 
 (%) :: BinOp
 (%) x y = fromIntegral ((toInt x) `mod` (toInt y))

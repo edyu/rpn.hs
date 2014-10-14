@@ -12,6 +12,8 @@ type UnaOp = (Double -> Double)
 type BinOp = (Double -> Double -> Double)
 type ArrOp = ([Double] -> Double)
 
+data Operator = Unary UnaOp | Binary BinOp | Array ArrOp
+
 class Calculable a where
     calculate :: Stack -> a -> Result
 
@@ -34,24 +36,16 @@ errDiv = "division by zero"
 errNum :: Error
 errNum = "can't parse number"
 
-unaops :: Map.Map String UnaOp
-unaops = Map.fromList
-  [("!", gamma)
-  ]
-
-binops :: Map.Map String BinOp
-binops = Map.fromList
-  [("+", (+))
-  ,("-", (-))
-  ,("*", (*))
-  ,("/", (/))
-  ,("%", (%))
-  ,("^", (**))
-  ]
-
-arrops :: Map.Map String ArrOp
-arrops = Map.fromList
-  [("sum",  sum)
+ops :: Map.Map String Operator
+ops = Map.fromList
+  [("!",    (Unary  gamma))
+  ,("+",    (Binary (+)))
+  ,("-",    (Binary (-)))
+  ,("*",    (Binary (*)))
+  ,("/",    (Binary (/)))
+  ,("%",    (Binary (%)))
+  ,("^",    (Binary (**)))
+  ,("sum",  (Array  sum))
   ]
 
 main :: IO ()
@@ -81,23 +75,21 @@ processInput stack = do
                   tokenize    = words
 
 process :: Result -> [String] -> Result
-process stacks []                 = stacks
-process (errs, s@(0:_)) ("/":xs)  = process (errDiv : errs, s) xs
-process (errs, s@(0:_)) ("%":xs)  = process (errDiv : errs, s) xs
-process stacks (x:xs) | x `Map.member` unaops = calcStack stacks op xs
-    where (Just op) = Map.lookup x unaops
-process stacks (x:xs) | x `Map.member` binops = calcStack stacks op xs
-    where (Just op) = Map.lookup x binops
-process stacks (x:xs) | x `Map.member` arrops = calcStack stacks op xs
-    where (Just op) = Map.lookup x arrops
-process (errs, stack) (x:xs)      = case parseNumber x of
-                                    ([e], []) -> process (e : errs, stack) xs
-                                    ([], [n]) -> process (errs, n : stack) xs
-                                    _         -> process (errs, stack) xs
-    where parseNumber y = case reads y of
-                          []        -> ([errNum], [])
-                          [(n, _)]  -> ([], [n])
-                          _         -> ([], [])
+process stacks []                = stacks
+process (errs, s@(0:_)) ("/":xs) = process (errDiv : errs, s) xs
+process (errs, s@(0:_)) ("%":xs) = process (errDiv : errs, s) xs
+process s@(errs, stack) (x:xs) = case Map.lookup x ops of
+        Just (Unary  op) -> calcStack s op xs
+        Just (Binary op) -> calcStack s op xs
+        Just (Array  op) -> calcStack s op xs
+        Nothing          -> case num of
+                ([e], [])  -> process (e : errs, stack) xs
+                ([],  [n]) -> process (errs, n : stack) xs
+                _          -> process s xs
+            where num = case reads x of
+                    []        -> ([errNum], [])
+                    [(n, _)]  -> ([], [n])
+                    _         -> ([], [])
 
 calcStack :: Calculable a => Result -> a -> [String] -> Result
 calcStack (errs, stack) op = let (e, s) = calculate stack op

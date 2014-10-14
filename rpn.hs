@@ -38,14 +38,14 @@ errNum = "can't parse number"
 
 ops :: Map.Map String Operator
 ops = Map.fromList
-  [("!",    (Unary  gamma))
-  ,("+",    (Binary (+)))
-  ,("-",    (Binary (-)))
-  ,("*",    (Binary (*)))
-  ,("/",    (Binary (/)))
-  ,("%",    (Binary (%)))
-  ,("^",    (Binary (**)))
-  ,("sum",  (Array  sum))
+  [ ("!",   (Unary  gamma))
+  , ("+",   (Binary (+)))
+  , ("-",   (Binary (-)))
+  , ("*",   (Binary (*)))
+  , ("/",   (Binary (/)))
+  , ("%",   (Binary (%)))
+  , ("^",   (Binary (**)))
+  , ("sum", (Array  sum))
   ]
 
 main :: IO ()
@@ -71,25 +71,27 @@ processInput stack = do
               then print $ head newStack
               else printErrors errors
             processInput newStack
-            where printErrors = mapM_ putStrLn
-                  tokenize    = words
+          where
+            printErrors = mapM_ putStrLn
+            tokenize    = words
 
 process :: Result -> [String] -> Result
 process stacks []                = stacks
 process (errs, s@(0:_)) ("/":xs) = process (errDiv : errs, s) xs
 process (errs, s@(0:_)) ("%":xs) = process (errDiv : errs, s) xs
 process s@(errs, stack) (x:xs) = case Map.lookup x ops of
-        Just (Unary  op) -> calcStack s op xs
-        Just (Binary op) -> calcStack s op xs
-        Just (Array  op) -> calcStack s op xs
-        Nothing          -> case num of
-                ([e], [])  -> process (e : errs, stack) xs
-                ([],  [n]) -> process (errs, n : stack) xs
-                _          -> process s xs
-            where num = case reads x of
-                    []        -> ([errNum], [])
-                    [(n, _)]  -> ([], [n])
-                    _         -> ([], [])
+    Just (Unary  op) -> calcStack s op xs
+    Just (Binary op) -> calcStack s op xs
+    Just (Array  op) -> calcStack s op xs
+    Nothing          -> case num of
+        ([e], [])  -> process (e : errs, stack) xs
+        ([],  [n]) -> process (errs, n : stack) xs
+        _          -> process s xs
+      where
+        num = case reads x of
+            [] -> ([errNum], [])
+            [(n, _)]  -> ([], [n])
+            _         -> ([], [])
 
 calcStack :: Calculable a => Result -> a -> [String] -> Result
 calcStack (errs, stack) op = let (e, s) = calculate stack op
@@ -97,12 +99,15 @@ calcStack (errs, stack) op = let (e, s) = calculate stack op
 
 (%) :: BinOp
 (%) x y = fromIntegral ((toInt x) `mod` (toInt y))
-    where toInt :: Double -> Int
-          toInt = round
+  where
+    toInt :: Double -> Int
+    toInt = round
 
 gamma :: UnaOp
 gamma x = fromIntegral (factorial (toInt x))
-    where factorial y | y <= 0 = 1
-                      | otherwise = y * factorial (y - 1)
-          toInt :: Double -> Int
-          toInt = floor
+  where
+    factorial y
+        | y <= 0    = 1
+        | otherwise = y * factorial (y - 1)
+    toInt :: Double -> Int
+    toInt = floor

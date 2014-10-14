@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 import Control.Exception (catch)
+import qualified Data.Map as Map
 
 type Stack = [Double]
 type Error = String
@@ -33,6 +34,26 @@ errDiv = "division by zero"
 errNum :: Error
 errNum = "can't parse number"
 
+unaops :: Map.Map String UnaOp
+unaops = Map.fromList
+  [("!",    gamma :: UnaOp)
+  ]
+
+binops :: Map.Map String BinOp
+binops = Map.fromList
+  [("+",    (+))
+  ,("-",    (-))
+  ,("*",    (*))
+  ,("/",    (/) :: BinOp)
+  ,("%",    (%) :: BinOp)
+  ,("^",    (**) :: BinOp)
+  ]
+
+arrops :: Map.Map String ArrOp
+arrops = Map.fromList
+  [("sum",  sum :: ArrOp)
+  ]
+
 main :: IO ()
 main = do
     processInput []
@@ -61,16 +82,14 @@ processInput stack = do
 
 process :: Result -> [String] -> Result
 process stacks []                 = stacks
-process stacks ("+":xs)           = calcStack stacks ((+) :: BinOp) xs
-process stacks ("-":xs)           = calcStack stacks ((-) :: BinOp) xs
-process stacks ("*":xs)           = calcStack stacks ((*) :: BinOp) xs
 process (errs, s@(0:_)) ("/":xs)  = process (errDiv : errs, s) xs
 process (errs, s@(0:_)) ("%":xs)  = process (errDiv : errs, s) xs
-process stacks ("/":xs)           = calcStack stacks ((/) :: BinOp) xs
-process stacks ("%":xs)           = calcStack stacks ((%) :: BinOp) xs
-process stacks ("^":xs)           = calcStack stacks ((**) :: BinOp) xs
-process stacks ("!":xs)           = calcStack stacks (gamma :: UnaOp) xs
-process stacks ("sum":xs)         = calcStack stacks (sum :: ArrOp) xs
+process stacks (x:xs) | x `Map.member` unaops = calcStack stacks op xs
+    where (Just op) = Map.lookup x unaops
+process stacks (x:xs) | x `Map.member` binops = calcStack stacks op xs
+    where (Just op) = Map.lookup x binops
+process stacks (x:xs) | x `Map.member` arrops = calcStack stacks op xs
+    where (Just op) = Map.lookup x arrops
 process (errs, stack) (x:xs)      = case parseNumber x of
                                     ([e], []) -> process (e : errs, stack) xs
                                     ([], [n]) -> process (errs, n : stack) xs

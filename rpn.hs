@@ -36,22 +36,22 @@ errNum = "can't parse number"
 
 unaops :: Map.Map String UnaOp
 unaops = Map.fromList
-  [("!",    gamma :: UnaOp)
+  [("!", gamma)
   ]
 
 binops :: Map.Map String BinOp
 binops = Map.fromList
-  [("+",    (+))
-  ,("-",    (-))
-  ,("*",    (*))
-  ,("/",    (/) :: BinOp)
-  ,("%",    (%) :: BinOp)
-  ,("^",    (**) :: BinOp)
+  [("+", (+))
+  ,("-", (-))
+  ,("*", (*))
+  ,("/", (/))
+  ,("%", (%))
+  ,("^", (**))
   ]
 
 arrops :: Map.Map String ArrOp
 arrops = Map.fromList
-  [("sum",  sum :: ArrOp)
+  [("sum",  sum)
   ]
 
 main :: IO ()

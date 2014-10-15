@@ -12,7 +12,9 @@ type UnaOp = (Double -> Double)
 type BinOp = (Double -> Double -> Double)
 type ArrOp = ([Double] -> Double)
 
-data Operator = Unary UnaOp | Binary BinOp | Array ArrOp
+data Operator = Unary  UnaOp
+              | Binary BinOp
+              | Array  ArrOp
 
 class Calculable a where
     calculate :: Stack -> a -> Result
@@ -68,8 +70,8 @@ processInput stack = do
         _ -> do
             let (errors, newStack) = process ([], stack) $ tokenize line
             if null errors
-              then print $ head newStack
-              else printErrors errors
+                then print $ head newStack
+                else printErrors errors
             processInput newStack
           where
             printErrors = mapM_ putStrLn

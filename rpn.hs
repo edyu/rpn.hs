@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-import Control.Exception (catch)
+import System.IO.Error (catchIOError)
 import qualified Data.Map as Map
 
 type Stack = [Double]
@@ -54,12 +54,9 @@ main :: IO ()
 main = do
     processInput []
 
-catchEOF :: IO a -> (IOError -> IO a) -> IO a
-catchEOF = Control.Exception.catch
-
 processInput :: Stack -> IO ()
 processInput stack = do
-    line <- catchEOF getLine (\_ -> return "q")
+    line <- catchIOError getLine (\_ -> return "q")
     case line of
         "q" -> do
             putStrLn "goodbye!"

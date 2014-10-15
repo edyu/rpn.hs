@@ -41,6 +41,7 @@ errNum = "can't parse number"
 ops :: Map.Map String Operator
 ops = Map.fromList
   [ ("!",   (Unary  gamma))
+  , ("ln",  (Unary  log))
   , ("+",   (Binary (+)))
   , ("-",   (Binary (-)))
   , ("*",   (Binary (*)))

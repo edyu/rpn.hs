@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-import System.IO.Error (catchIOError)
+import System.IO.Error (catchIOError, isEOFError)
 import qualified Data.Map as Map
 
 type Stack = [Double]
@@ -56,7 +56,7 @@ main = do
 
 processInput :: Stack -> IO ()
 processInput stack = do
-    line <- catchIOError getLine (\_ -> return "q")
+    line <- catchIOError getLine handleEOF
     case line of
         "q" -> do
             putStrLn "goodbye!"
@@ -73,6 +73,10 @@ processInput stack = do
           where
             printErrors = mapM_ putStrLn
             tokenize    = words
+  where
+    handleEOF e
+        | isEOFError e = return "q"
+        | otherwise    = ioError e
 
 process :: Result -> [String] -> Result
 process stacks []                = stacks
